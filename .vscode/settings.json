@@ -1,0 +1,26 @@
+{
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/.git": true,
+    "**/.vs": true,
+    "**/.idea": true,
+    "Library/": true,
+    "Temp/": true,
+    "Obj/": true,
+    "Logs/": true,
+    "UserSettings/": true,
+    "Build/": true,
+    "Builds/": true
+  },
+  "files.associations": {
+    "*.asset": "yaml",
+    "*.meta": "yaml",
+    "*.prefab": "yaml",
+    "*.unity": "yaml"
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.sln": "*.csproj",
+    "*.slnx": "*.csproj"
+  }
+}
