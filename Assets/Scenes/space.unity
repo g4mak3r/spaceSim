@@ -322,11 +322,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 750f8f4afd510b040a53d091da5762dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalSpeed: 20
-  warpSpeed: 500
-  acceleration: 2
-  deceleration: 1
-  rollRecoverySpeed: 2
+  riftingMaxSpeed: 85
+  riftingAcceleration: 11.5
+  coastDragPerSecond: 0.3
+  coastStopEpsilon: 0.025
+  lateralAssist: 0.16
+  vectorMaxSpeed: 200
+  vectorAcceleration: 32
+  vectorReleaseDeceleration: 30
+  reverseMaxSpeed: 32
+  reverseAcceleration: 8
+  brakeDragPerSecond: 1.35
+  highSpeedBrakeDragPerSecond: 2.25
+  reverseEntrySpeed: 0.3
+  reverseLateralTolerance: 0.5
+  warpChargeDuration: 3
+  warpChargeMaxSpeed: 1.5
+  warpChargeStabilization: 4
+  warpMaxSpeed: 1800
+  warpAcceleration: 560
+  warpExitDragPerSecond: 1.7
+  warpEmergencyBrakeDragPerSecond: 2.6
+  warpVelocityAlignment: 18
+  warpVisualStartSpeed: 140
+  warpVisualFullSpeed: 520
+  warpVisualResponse: 6
+  rotationImpulse: 7.5
+  maxPitchRate: 42
+  maxYawRate: 55
+  turnInputDamping: 1.15
+  turnReleaseDamping: 2.8
+  warpTurnRateMultiplier: 0.55
+  highSpeedEffectStart: 135
+  highSpeedEffectFull: 200
+  presentationResponseTime: 0.28
+  tuningRevision: 4
 --- !u!114 &195124019
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -341,9 +371,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shipMotor: {fileID: 195124018}
   cam: {fileID: 195124012}
-  normalFOV: 60
-  warpFOV: 110
-  lerpSpeed: 2
+  cockpitRect: {fileID: 0}
+  idleFOV: 60
+  warpTravelFOV: 98
+  warpHorizontalExpansion: 0.24
+  warpVerticalExpansion: 0.14
+  warpDownShift: 24
+  visualTuningRevision: 3
 --- !u!114 &195124020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -561,6 +595,7 @@ MonoBehaviour:
   navMarker: {fileID: 1770672005}
   maxOffset: 40
   smoothTime: 8
+  telemetryRefreshInterval: 0.18
 --- !u!1 &513949295
 GameObject:
   m_ObjectHideFlags: 0
@@ -572,6 +607,7 @@ GameObject:
   - component: {fileID: 513949296}
   - component: {fileID: 513949298}
   - component: {fileID: 513949297}
+  - component: {fileID: 513949299}
   m_Layer: 0
   m_Name: Space Dust
   m_TagString: Untagged
@@ -5452,6 +5488,36 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
+--- !u!114 &513949299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 513949295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b5c6e6f318b42c98d89e95099767e8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shipMotor: {fileID: 195124018}
+  nearCount: 1600
+  nearHalfExtent: 90
+  farCount: 2600
+  farHalfExtent: 260
+  nearParticleMinSize: 0.035
+  nearParticleMaxSize: 0.105
+  farParticleMinSize: 0.016
+  farParticleMaxSize: 0.052
+  nearMinAlpha: 0.22
+  nearMaxAlpha: 0.72
+  farMinAlpha: 0.1
+  farMaxAlpha: 0.4
+  warpStreakVelocityScale: 0.34
+  cruiseStreakLength: 0.05
+  warpStreakLength: 4.2
+  fieldMovementThreshold: 0.001
+  visualTuningRevision: 2
 --- !u!1 &659746251
 GameObject:
   m_ObjectHideFlags: 0
@@ -10357,8 +10423,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetCamera: {fileID: 195124013}
+  shipMotor: {fileID: 0}
   starCount: 6000
   fieldRadius: 2500
+  warpRadialVelocity: 120
+  warpLengthScale: 5.5
+  warpVelocityScale: 0.085
 --- !u!1 &813928096
 GameObject:
   m_ObjectHideFlags: 0
@@ -10489,13 +10559,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1013316543}
-  m_LocalRotation: {x: -0.29228708, y: -0, z: -0, w: 0.9563306}
-  m_LocalPosition: {x: 0, y: 0, z: 41.00128}
+  m_LocalRotation: {x: -0.31731242, y: -0, z: -0, w: 0.94832104}
+  m_LocalPosition: {x: 0, y: 0, z: 41.00723}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 813928100}
-  m_LocalEulerAnglesHint: {x: -33.99, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -37.001, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 22, y: 55.4}
@@ -10514,20 +10584,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   textMesh: {fileID: 0}
-  statusMessages:
-  - ///CONNECTING
-  - ///SYNCING SENSORS
-  - ///ESTABLISHING CONNECTION
-  - ///SIGNAL LOST
-  - ///RE-ESTABLISHING
-  glitchChars:
-  - '#'
-  - '%'
-  - '&'
-  - '!'
-  - '?'
-  - 0
-  - 1
+  shipMotor: {fileID: 0}
+  riftingColor: {r: 0.78, g: 0.7, b: 0.5, a: 0.82}
+  vectorColor: {r: 0.34, g: 0.7, b: 1, a: 1}
+  warpColor: {r: 0.4, g: 0.95, b: 0.6, a: 1}
+  warpReadyColor: {r: 0.35, g: 0.82, b: 0.52, a: 0.78}
+  paletteRevision: 1
 --- !u!114 &1013316546
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10548,7 +10610,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: 123
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10557,7 +10619,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294947476
+    rgba: 2566894228
   m_fontColor: {r: 0.57924527, g: 0.6998439, b: 1, a: 0.59607846}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -10575,8 +10637,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
-  m_fontSizeBase: 18
+  m_fontSize: 14
+  m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 10
@@ -10799,7 +10861,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -102.99999, y: -116.299995}
+  m_AnchoredPosition: {x: -112.8, y: -116.299995}
   m_SizeDelta: {x: 60, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1148939062
@@ -10822,7 +10884,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Speed
+  m_text: Lol
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10849,7 +10911,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20.55
+  m_fontSize: 40
   m_fontSizeBase: 15
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -11048,13 +11110,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1363103635}
-  m_LocalRotation: {x: -0.27473822, y: -0, z: -0, w: 0.96151906}
+  m_LocalRotation: {x: -0.29104644, y: -0, z: -0, w: 0.95670897}
   m_LocalPosition: {x: 0, y: 0, z: -19.605583}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 467171410}
-  m_LocalEulerAnglesHint: {x: -31.893, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -33.841, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -0.000030517578, y: 144.42534}
@@ -11109,12 +11171,12 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 22.05
+  m_fontSize: 14
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
-  m_fontSizeMin: 16
-  m_fontSizeMax: 30
+  m_fontSizeMin: 10
+  m_fontSizeMax: 14
   m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -11326,7 +11388,7 @@ RectTransform:
   m_GameObject: {fileID: 1658000820}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.15, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 813928100}
@@ -11448,7 +11510,7 @@ RectTransform:
   m_GameObject: {fileID: 1725710365}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.16375, y: 1.0875, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1770672005}
@@ -11456,10 +11518,10 @@ RectTransform:
   - {fileID: 1422721322}
   m_Father: {fileID: 467171410}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.44450748, y: 0.051000003}
-  m_AnchorMax: {x: 0.5555075, y: 0.36930507}
-  m_AnchoredPosition: {x: 0, y: -0.19999695}
-  m_SizeDelta: {x: 1, y: 0}
+  m_AnchorMin: {x: 0.43400002, y: 0.051000003}
+  m_AnchorMax: {x: 0.56600004, y: 0.36400002}
+  m_AnchoredPosition: {x: 0, y: 1.9593964}
+  m_SizeDelta: {x: -13, y: 2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1770672004
 GameObject:
@@ -11580,12 +11642,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 092edd0d95cda9e4d9bc529b0c2a8feb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  player: {fileID: 195124013}
   systemPrefab: {fileID: 3592676783076128263, guid: 97dbca4a23a36204e90dbf05ad89a4e1, type: 3}
   sunPrefab: {fileID: 5688182121999713855, guid: 84be3080942422b40a3ec68299bc7ef0, type: 3}
   planetPrefab: {fileID: 642893492739393779, guid: 191401094ded1c94a8bbd7fec3b3dae1, type: 3}
   systemCount: 5
-  galaxyRadius: 20000
-  systemScale: 50
+  galaxySeed: 1701
+  cellSize: 5200
+  systemChance: 0.42
+  loadRadius: 8500
+  unloadRadius: 11000
+  refreshInterval: 0.6
+  systemScale: 8
+  minPlanets: 1
+  maxPlanets: 4
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

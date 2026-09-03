@@ -6,11 +6,11 @@ A small Unity space-simulation prototype focused on procedural star-system gener
 
 ## Highlights
 
-- Procedural galaxy and star-system generation
-- Generated stars, suns, and planets
-- Lightweight N-body-style gravity for generated celestial bodies
-- First-person ship controls with normal and warp speeds
-- Warp FOV feedback
+- Deterministic streamed star-system generation around the player
+- Generated stars, suns, and planets with lightweight kinematic orbits
+- Constant-cost local space-dust field with particle recycling (no visible spawn boundary)
+- Inertial ship flight with RIFTING cruise, hold-to-boost VECTOR thrust, reverse flight, and charged WARP
+- Velocity-preserving turns, lateral drift, mode-dependent FOV, and restrained particle-streak feedback
 - Diegetic navigation HUD with nearest-system direction and distance
 - Procedural galactic star background
 - Unity Input System integration
@@ -42,11 +42,13 @@ The gameplay scene is the only enabled scene in Build Settings.
 | Input | Action |
 | --- | --- |
 | `W` / Up Arrow | Throttle forward |
-| `Left Shift` / `Right Shift` | Warp while accelerating |
-| Mouse | Pitch / yaw |
+| Hold `Left Shift` / `Right Shift` | VECTOR boost (higher thrust, capped around 135 unit/s) |
+| Hold `Space` while nearly stopped | Charge WARP (3 → 2 → 1); keep holding to remain in WARP |
+| `S` / Down Arrow | Brake; once nearly stopped, reverse thrust |
+| Mouse | Pitch / yaw with rotational inertia |
 | `Esc` | Toggle cursor lock |
 
-`S` / Down Arrow is currently read by the controller but reverse thrust is intentionally not implemented by `ShipMotor` yet.
+RIFTING is the normal heavy cruise mode. Releasing `W` preserves momentum with only minimal passive drag. Holding Shift temporarily engages VECTOR boost. WARP can only be charged at near-zero speed; releasing Space disengages it and begins deceleration, while `S` performs a stronger abort/brake and transitions into reverse once the ship is nearly stopped.
 
 ## Build
 
@@ -94,11 +96,12 @@ The project deliberately stays lightweight. Gameplay remains component-oriented 
 
 Key boundaries are:
 
-- `GalaxyManager` owns galaxy generation and lookup of generated systems.
-- `StarSystem` owns generation of a single system and its proximity trigger.
+- `GalaxyManager` streams a bounded number of deterministic systems around the player and unloads distant systems.
+- `StarSystem` owns deterministic system content, cheap kinematic planet orbits, and its proximity trigger.
 - `ShipController` reads player input; `ShipMotor` owns ship movement state.
 - `ShipHUD` consumes simulation/player state and handles presentation only.
-- `GravityBody` maintains the active gravity-body registry and integrates motion during fixed updates.
+- `SpaceDustField` keeps two periodic world-space particle layers around the player; particles remain stationary at rest and wrap only at distant field boundaries.
+- `GravityBody` remains available for isolated physics experiments, but generated systems intentionally use cheap kinematic orbits.
 
 ## Repository hygiene
 

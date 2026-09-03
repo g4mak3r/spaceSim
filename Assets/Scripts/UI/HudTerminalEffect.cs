@@ -1,4 +1,4 @@
-using System.Collections;
+using SpaceSim.Player;
 using TMPro;
 using UnityEngine;
 
@@ -9,74 +9,99 @@ namespace SpaceSim.UI
     {
         [Header("References")]
         [SerializeField] private TextMeshProUGUI textMesh;
+        [SerializeField] private ShipMotor shipMotor;
 
-        [Header("Settings")]
-        [SerializeField] private string[] statusMessages =
-        {
-            "///CONNECTING",
-            "///SYNCING SENSORS",
-            "///SCANNING AREA",
-            "///SIGNAL LOST",
-            "///RE-ESTABLISHING"
-        };
+        [Header("Drive Colors")]
+        [SerializeField] private Color riftingColor = new Color(0.78f, 0.70f, 0.50f, 0.82f);
+        [SerializeField] private Color vectorColor = new Color(0.34f, 0.70f, 1f, 1f);
+        [SerializeField] private Color warpColor = new Color(0.40f, 0.95f, 0.60f, 1f);
+        [SerializeField] private Color warpReadyColor = new Color(0.35f, 0.82f, 0.52f, 0.78f);
 
-        [SerializeField] private string[] glitchChars = { "#", "%", "&", "!", "?", "0", "1" };
-
-        private readonly WaitForSeconds _glitchDelay = new WaitForSeconds(0.1f);
-        private readonly WaitForSeconds _typingDelay = new WaitForSeconds(0.4f);
-        private readonly WaitForSeconds _messageDelay = new WaitForSeconds(1.5f);
+        [SerializeField, HideInInspector] private int paletteRevision;
+        private const int CurrentPaletteRevision = 1;
 
         private void Awake()
         {
+            ApplyCurrentPalette();
+
             if (textMesh == null)
             {
                 textMesh = GetComponent<TextMeshProUGUI>();
             }
-        }
 
-        private void OnEnable()
-        {
-            if (textMesh != null && statusMessages.Length > 0)
+            if (shipMotor == null)
             {
-                StartCoroutine(TerminalLoop());
+                shipMotor = FindFirstObjectByType<ShipMotor>();
             }
         }
 
-        private IEnumerator TerminalLoop()
+        private void OnValidate()
         {
-            int index = 0;
-
-            while (enabled)
-            {
-                string baseMessage = statusMessages[index];
-
-                if (baseMessage.Contains("LOST"))
-                {
-                    for (int i = 0; i < 10; i++)
-                    {
-                        textMesh.text = $"///SIG{GetGlitch()}AL L{GetGlitch()}ST";
-                        yield return _glitchDelay;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        textMesh.text = baseMessage + new string('.', i);
-                        yield return _typingDelay;
-                    }
-                }
-
-                index = (index + 1) % statusMessages.Length;
-                yield return _messageDelay;
-            }
+            ApplyCurrentPalette();
         }
 
-        private string GetGlitch()
+        private void Update()
         {
-            return glitchChars.Length == 0
-                ? "#"
-                : glitchChars[Random.Range(0, glitchChars.Length)];
+            if (textMesh == null || shipMotor == null)
+            {
+                return;
+            }
+
+            if (shipMotor.IsWarping)
+            {
+                SetText("/// DRIVE: WARP", warpColor);
+                return;
+            }
+
+            if (shipMotor.IsWarpDisengaging)
+            {
+                SetText("/// WARP: DECEL", warpColor);
+                return;
+            }
+
+            if (shipMotor.IsWarpCharging)
+            {
+                float pulse = 0.82f + Mathf.Sin(Time.unscaledTime * 8f) * 0.18f;
+                Color chargingColor = warpColor;
+                chargingColor.a *= pulse;
+                SetText($"/// WARP IN: {shipMotor.WarpCountdown}", chargingColor);
+                return;
+            }
+
+            if (shipMotor.CanChargeWarp)
+            {
+                SetText("/// HOLD SPACE TO WARP", warpReadyColor);
+                return;
+            }
+
+            if (shipMotor.IsVectorBoosting)
+            {
+                float pulse = 0.84f + Mathf.Sin(Time.unscaledTime * 5.5f) * 0.16f;
+                Color boosted = vectorColor;
+                boosted.a *= pulse;
+                SetText("/// DRIVE: VECTOR", boosted);
+                return;
+            }
+
+            SetText("/// DRIVE: RIFTING", riftingColor);
+        }
+
+        private void ApplyCurrentPalette()
+        {
+            if (paletteRevision >= CurrentPaletteRevision)
+            {
+                return;
+            }
+
+            // Muted warm sand instead of the previous saturated yellow.
+            riftingColor = new Color(0.78f, 0.70f, 0.50f, 0.82f);
+            paletteRevision = CurrentPaletteRevision;
+        }
+
+        private void SetText(string value, Color color)
+        {
+            textMesh.text = value;
+            textMesh.color = color;
         }
     }
 }

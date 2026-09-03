@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace SpaceSim.Utils
 {
     public static class StarNameGenerator
@@ -14,11 +12,12 @@ namespace SpaceSim.Utils
             "Orion", "Draco", "Lyra", "Aquila", "Cygnus", "Vega", "Altair", "Centauri"
         };
 
-        public static string Generate()
+        public static string Generate(int seed)
         {
-            string prefix = Prefixes[Random.Range(0, Prefixes.Length)];
-            string root = Roots[Random.Range(0, Roots.Length)];
-            int number = Random.Range(100, 9999);
+            var random = new System.Random(seed);
+            string prefix = Prefixes[random.Next(Prefixes.Length)];
+            string root = Roots[random.Next(Roots.Length)];
+            int number = random.Next(100, 9999);
 
             return $"{prefix}-{root}-{number}";
         }

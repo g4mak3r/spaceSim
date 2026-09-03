@@ -39,23 +39,29 @@ namespace SpaceSim.Player
             Mouse mouse = Mouse.current;
 
             float throttle = 0f;
-            bool isWarping = false;
+            bool vectorBoost = false;
+            bool warpHeld = false;
 
             if (keyboard != null)
             {
                 bool forward = keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed;
-                bool backward = keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed;
-                throttle = (forward ? 1f : 0f) - (backward ? 1f : 0f);
-                isWarping = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
+                bool reverse = keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed;
+                throttle = (forward ? 1f : 0f) - (reverse ? 1f : 0f);
+
+                vectorBoost = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
+                warpHeld = keyboard.spaceKey.isPressed;
             }
 
             Vector2 lookDelta = mouse != null && Cursor.lockState == CursorLockMode.Locked
                 ? mouse.delta.ReadValue()
                 : Vector2.zero;
+
             float mouseX = lookDelta.x * LegacyMouseAxisScale * mouseSensitivity;
             float mouseY = -lookDelta.y * LegacyMouseAxisScale * mouseSensitivity;
 
-            _motor.Move(throttle, isWarping);
+            _motor.Move(throttle);
+            _motor.SetVectorBoost(vectorBoost);
+            _motor.SetWarpHeld(warpHeld);
             _motor.Rotate(mouseY, mouseX);
         }
 

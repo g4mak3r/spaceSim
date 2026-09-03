@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using SpaceSim.Physics;
 using SpaceSim.Player;
 using SpaceSim.UI;
 using SpaceSim.Utils;
@@ -8,20 +10,34 @@ namespace SpaceSim.Systems
     [RequireComponent(typeof(SphereCollider))]
     public sealed class StarSystem : MonoBehaviour
     {
+        private sealed class OrbitingPlanet
+        {
+            public Transform Transform;
+            public float Radius;
+            public float Angle;
+            public float AngularSpeed;
+            public Quaternion PlaneRotation;
+        }
+
         [Header("Config")]
         [SerializeField] private Transform rootTransform;
+
+        private readonly List<OrbitingPlanet> _planets = new List<OrbitingPlanet>();
 
         public string SystemName { get; private set; }
         public Transform SunTransform { get; private set; }
 
         public void Initialize(
+            int seed,
             float scaleMultiplier,
             int minPlanets,
             int maxPlanets,
             GameObject sunPrefab,
             GameObject planetPrefab)
         {
-            SystemName = StarNameGenerator.Generate();
+            var random = new System.Random(seed);
+
+            SystemName = StarNameGenerator.Generate(seed);
             gameObject.name = $"System_{SystemName}";
 
             if (rootTransform == null)
@@ -29,11 +45,30 @@ namespace SpaceSim.Systems
                 rootTransform = transform;
             }
 
-            GenerateContent(scaleMultiplier, minPlanets, maxPlanets, sunPrefab, planetPrefab);
-            ConfigureTrigger(scaleMultiplier, maxPlanets);
+            _planets.Clear();
+            float outerOrbit = GenerateContent(random, scaleMultiplier, minPlanets, maxPlanets, sunPrefab, planetPrefab);
+            ConfigureTrigger(outerOrbit, scaleMultiplier);
         }
 
-        private void GenerateContent(
+        private void Update()
+        {
+            float deltaTime = Time.deltaTime;
+
+            for (int i = 0; i < _planets.Count; i++)
+            {
+                OrbitingPlanet planet = _planets[i];
+                planet.Angle = Mathf.Repeat(planet.Angle + planet.AngularSpeed * deltaTime, 360f);
+
+                Vector3 orbitPosition = Quaternion.Euler(0f, planet.Angle, 0f)
+                    * Vector3.forward
+                    * planet.Radius;
+
+                planet.Transform.localPosition = planet.PlaneRotation * orbitPosition;
+            }
+        }
+
+        private float GenerateContent(
+            System.Random random,
             float scale,
             int minPlanets,
             int maxPlanets,
@@ -43,37 +78,77 @@ namespace SpaceSim.Systems
             GameObject sun = Instantiate(sunPrefab, rootTransform);
             sun.name = "Sun";
             SunTransform = sun.transform;
+            SunTransform.localPosition = Vector3.zero;
 
-            float sunScale = Random.Range(10f, 20f) * scale;
+            DisableGravitySimulation(sun);
+
+            float sunScale = RandomRange(random, 7f, 13f) * scale;
             sun.transform.localScale = Vector3.one * sunScale;
 
-            int planetCount = Random.Range(minPlanets, maxPlanets + 1);
-            float currentOrbit = 100f * scale + sunScale * 0.5f;
+            int planetCount = random.Next(minPlanets, maxPlanets + 1);
+            float currentOrbit = 42f * scale + sunScale * 0.55f;
 
             for (int i = 0; i < planetCount; i++)
             {
-                currentOrbit += 80f * scale;
-                CreatePlanet(planetPrefab, i, currentOrbit, scale);
+                currentOrbit += RandomRange(random, 28f, 48f) * scale;
+                CreatePlanet(random, planetPrefab, i, currentOrbit, scale);
             }
+
+            return currentOrbit;
         }
 
-        private void CreatePlanet(GameObject prefab, int index, float orbitRadius, float scale)
+        private void CreatePlanet(
+            System.Random random,
+            GameObject prefab,
+            int index,
+            float orbitRadius,
+            float scale)
         {
-            float angle = Random.Range(0f, 360f);
-            Vector3 localPosition = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * orbitRadius;
+            GameObject planetObject = Instantiate(prefab, rootTransform);
+            planetObject.name = $"Planet_{index + 1}";
+            planetObject.transform.localScale = Vector3.one * RandomRange(random, 0.8f, 2.8f) * scale;
 
-            GameObject planet = Instantiate(prefab, rootTransform);
-            planet.name = $"Planet_{index + 1}";
-            planet.transform.localPosition = localPosition;
-            planet.transform.localScale = Vector3.one * Random.Range(1f, 4f) * scale;
+            DisableGravitySimulation(planetObject);
+
+            var orbit = new OrbitingPlanet
+            {
+                Transform = planetObject.transform,
+                Radius = orbitRadius,
+                Angle = RandomRange(random, 0f, 360f),
+                AngularSpeed = RandomRange(random, 0.35f, 1.15f) / Mathf.Max(0.25f, scale * 0.15f),
+                PlaneRotation = Quaternion.Euler(
+                    RandomRange(random, -10f, 10f),
+                    0f,
+                    RandomRange(random, -10f, 10f))
+            };
+
+            Vector3 initialPosition = Quaternion.Euler(0f, orbit.Angle, 0f)
+                * Vector3.forward
+                * orbit.Radius;
+            orbit.Transform.localPosition = orbit.PlaneRotation * initialPosition;
+
+            _planets.Add(orbit);
         }
 
-        private void ConfigureTrigger(float scale, int maxPlanets)
+        private void ConfigureTrigger(float outerOrbit, float scale)
         {
             SphereCollider trigger = GetComponent<SphereCollider>();
             trigger.isTrigger = true;
             trigger.center = Vector3.zero;
-            trigger.radius = maxPlanets * 150f * scale;
+            trigger.radius = outerOrbit + 35f * scale;
+        }
+
+        private static void DisableGravitySimulation(GameObject body)
+        {
+            if (body.TryGetComponent(out GravityBody gravityBody))
+            {
+                gravityBody.enabled = false;
+            }
+        }
+
+        private static float RandomRange(System.Random random, float min, float max)
+        {
+            return Mathf.Lerp(min, max, (float)random.NextDouble());
         }
 
         private void OnTriggerEnter(Collider other)
@@ -84,6 +159,16 @@ namespace SpaceSim.Systems
             }
 
             ShipHUD.Instance?.UpdateLocationName(SystemName);
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (!other.CompareTag("Player") && !other.TryGetComponent(out ShipController _))
+            {
+                return;
+            }
+
+            ShipHUD.Instance?.UpdateLocationName("DEEP SPACE");
         }
     }
 }

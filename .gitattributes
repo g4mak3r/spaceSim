@@ -19,6 +19,6 @@
 *.ttf binary
 *.otf binary
 
-# GitHub Linguist
+# GitHub Linguist: exclude third-party/template assets from language statistics.
 Assets/TextMesh[[:space:]]Pro/** linguist-vendored
 Assets/Settings/** linguist-generated

@@ -1,3 +1,4 @@
+using SpaceSim.Player;
 using UnityEngine;
 
 namespace SpaceSim.Environment
@@ -7,14 +8,30 @@ namespace SpaceSim.Environment
     {
         [Header("Settings")]
         [SerializeField] private Transform targetCamera;
+        [SerializeField] private ShipMotor shipMotor;
         [SerializeField, Min(1)] private int starCount = 6000;
         [SerializeField, Min(1f)] private float fieldRadius = 2500f;
 
+        [Header("WARP-only Star Pull")]
+        [SerializeField, Min(0f)] private float warpRadialVelocity = 120f;
+        [SerializeField, Min(0f)] private float warpLengthScale = 5.5f;
+        [SerializeField, Range(0f, 1f)] private float warpVelocityScale = 0.085f;
+
         private ParticleSystem _particleSystem;
+        private ParticleSystemRenderer _renderer;
+        private ParticleSystem.Particle[] _particles;
+        private float _lastWarpIntensity = -1f;
 
         private void Awake()
         {
             _particleSystem = GetComponent<ParticleSystem>();
+            _renderer = GetComponent<ParticleSystemRenderer>();
+
+            if (shipMotor == null)
+            {
+                shipMotor = FindFirstObjectByType<ShipMotor>();
+            }
+
             ConfigureParticleSystem();
             GenerateStars();
         }
@@ -25,6 +42,8 @@ namespace SpaceSim.Environment
             {
                 transform.position = targetCamera.position;
             }
+
+            UpdateWarpPresentation();
         }
 
         private void ConfigureParticleSystem()
@@ -34,30 +53,78 @@ namespace SpaceSim.Environment
             main.playOnAwake = false;
             main.maxParticles = starCount;
             main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.simulationSpeed = 0f;
             main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
 
             ParticleSystem.EmissionModule emission = _particleSystem.emission;
             emission.enabled = false;
+
+            if (_renderer != null)
+            {
+                _renderer.renderMode = ParticleSystemRenderMode.Billboard;
+                _renderer.velocityScale = 0f;
+                _renderer.lengthScale = 0f;
+                _renderer.localBounds = new Bounds(Vector3.zero, Vector3.one * fieldRadius * 2.4f);
+            }
         }
 
         private void GenerateStars()
         {
-            var particles = new ParticleSystem.Particle[starCount];
+            _particles = new ParticleSystem.Particle[starCount];
 
-            for (int i = 0; i < particles.Length; i++)
+            for (int i = 0; i < _particles.Length; i++)
             {
                 Vector3 direction = Random.onUnitSphere;
                 float noise = Mathf.PerlinNoise(direction.x * 1.8f + 12.3f, direction.y * 1.8f + 42.7f);
                 float radius = fieldRadius * Mathf.Lerp(0.92f, 1f, noise);
 
-                particles[i].position = direction * radius;
-                particles[i].startSize = GenerateStarSize();
-                particles[i].startColor = GenerateStarColor();
-                particles[i].startLifetime = Mathf.Infinity;
-                particles[i].remainingLifetime = Mathf.Infinity;
+                _particles[i].position = direction * radius;
+                _particles[i].velocity = Vector3.zero;
+                _particles[i].startSize = GenerateStarSize();
+                _particles[i].startColor = GenerateStarColor();
+                _particles[i].startLifetime = Mathf.Infinity;
+                _particles[i].remainingLifetime = Mathf.Infinity;
             }
 
-            _particleSystem.SetParticles(particles, particles.Length);
+            _particleSystem.SetParticles(_particles, _particles.Length);
+        }
+
+        private void UpdateWarpPresentation()
+        {
+            if (_particles == null || _renderer == null)
+            {
+                return;
+            }
+
+            float warp = shipMotor != null
+                ? Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(shipMotor.WarpIntensity))
+                : 0f;
+
+            if (Mathf.Abs(warp - _lastWarpIntensity) < 0.002f)
+            {
+                return;
+            }
+
+            bool active = warp > 0.002f;
+            _renderer.renderMode = active
+                ? ParticleSystemRenderMode.Stretch
+                : ParticleSystemRenderMode.Billboard;
+            _renderer.velocityScale = Mathf.Lerp(0f, warpVelocityScale, warp);
+            _renderer.lengthScale = Mathf.Lerp(0f, warpLengthScale, warp);
+
+            // Local-space stars radiate out from the camera centre while WARP is
+            // active. Particle simulation is paused, so velocity is purely a render
+            // vector for stretched billboards rather than actual star movement.
+            for (int i = 0; i < _particles.Length; i++)
+            {
+                Vector3 radial = _particles[i].position.sqrMagnitude > 0.0001f
+                    ? _particles[i].position.normalized
+                    : Vector3.forward;
+                _particles[i].velocity = radial * (warpRadialVelocity * warp);
+            }
+
+            _particleSystem.SetParticles(_particles, _particles.Length);
+            _lastWarpIntensity = warp;
         }
 
         private static float GenerateStarSize()
