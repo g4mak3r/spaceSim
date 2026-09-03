@@ -18,3 +18,7 @@
 *.psd binary
 *.ttf binary
 *.otf binary
+
+# GitHub Linguist
+Assets/TextMesh[[:space:]]Pro/** linguist-vendored
+Assets/Settings/** linguist-generated
